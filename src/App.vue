@@ -1,6 +1,5 @@
 <template>
     <div id="app">
-        "hello"
         <Grid />
     </div>
 </template>
