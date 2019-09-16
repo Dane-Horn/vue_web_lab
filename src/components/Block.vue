@@ -1,5 +1,10 @@
 <template>
-    <div v-bind:class="[classArray]" v-on:click="emitGetPath()" class="block"></div>
+    <v-col
+        @mousedown="() => blockClicked(false)"
+        @mouseover="() => blockClicked(true)"
+        v-bind:class="[classArray]"
+        class="block"
+    ></v-col>
 </template>
 
 <script>
@@ -8,8 +13,14 @@ export default {
     data() {
         return {};
     },
-    props: ["weight", "seen", "visited"],
+    props: ["weight", "value", "pos", "dragging"],
     computed: {
+        seen() {
+            return this.value == -1;
+        },
+        visited() {
+            return this.value == -2;
+        },
         classArray() {
             return [this.gridClass, this.blockWeight];
         },
@@ -40,9 +51,20 @@ export default {
         }
     },
     methods: {
-        emitGetPath() {
+        blockClicked(dragAction) {
+            {
+                if (this.weight == 6 && !dragAction) this.$emit("get-path");
+                else if (this.weight == 7 && !dragAction)
+                    this.$emit("clear-path");
+                else if (this.dragging || !dragAction) {
+                    this.$emit("block-clicked", this.pos, this.weight);
+                }
+            }
+        },
+        blockClicked2() {
             if (this.weight == 6) this.$emit("get-path");
-            if (this.weight == 7) this.$emit("clear-path");
+            else if (this.weight == 7) this.$emit("clear-path");
+            else this.$emit("block-clicked", this.pos, this.weight);
         }
     }
 };
@@ -67,7 +89,7 @@ export default {
     background-color: white;
 }
 .visited {
-    background-color: blue;
+    background-color: darkblue;
 }
 .wall {
     background-color: black;
