@@ -75,8 +75,8 @@ export default {
     border-style: solid;
     border-color: black;
     border-width: 1px;
-    width: 100px;
-    height: 100px;
+    width: auto;
+    height: auto;
     vertical-align: middle;
     text-align: center;
     padding: 5px 0;

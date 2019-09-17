@@ -3,13 +3,13 @@
         <div class="grid-container">
             <v-toolbar></v-toolbar>
             <v-container @mousedown="dragging = true">
-                <v-row :key="y" v-for="(row, y) in res">
+                <v-row :key="y" v-for="(row, y) in grid">
                     <Block
                         @get-path="getPath()"
                         @clear-path="clearPath()"
                         @block-clicked="blockClicked"
                         :dragging="dragging"
-                        :value="col"
+                        :value="res[y][x]"
                         :weight="grid[y][x]"
                         :pos="[x, y]"
                         :key="x"
@@ -32,16 +32,22 @@ export default {
     data: function() {
         return {
             k: 0,
+            //prettier-ignore
             grid: [
-                [6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 0],
-                [0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 5, 5, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 5, 0, 5, 0, 5, 5, 5, 5, 5, 5, 5, 5, 0],
-                [0, 0, 0, 5, 0, 5, 0, 5, 7, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0]
+                // [6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                // [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 0],
+                // [0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 5, 5, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 0, 5, 0, 5, 0, 5, 5, 5, 5, 5, 5, 5, 5],
+                // [0, 0, 0, 5, 0, 5, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+                // [0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 7],
             ],
             alg: "depth-first",
             res: [],
@@ -68,10 +74,17 @@ export default {
                     alg: this.alg,
                     grid: this.grid
                 });
+                let {
+                    data: { s }
+                } = await axios.post("http://localhost:3000/getPath", {
+                    alg: this.alg,
+                    grid: this.grid
+                });
+
                 this.clearPath();
                 this.pathed = true;
                 this.res = this.grid.map(row => row.map(() => 0));
-                this.animate(visited, 0, nodelay);
+                await this.animate(visited, 100, nodelay);
             } catch (error) {
                 this.clearPath();
                 this.pathed = true;
@@ -85,19 +98,7 @@ export default {
             let timer = ms => {
                 return new Promise(res => setTimeout(res, ms));
             };
-            for (let {
-                val: [x, y],
-                neighbours
-            } of visited) {
-                neighbours = (neighbours || []).filter(
-                    ([x, y]) => this.res[y][x] == 0
-                );
-                if (neighbours.length > 0) {
-                    neighbours.forEach(([x, y]) =>
-                        this.$set(this.res[y], x, -1)
-                    );
-                    if (!nodelay) await timer(ms);
-                }
+            for (let [x, y] of visited) {
                 if (this.res[y][x] != -2) {
                     this.$set(this.res[y], x, -2);
                     if (!nodelay) await timer(ms);
@@ -123,11 +124,21 @@ export default {
     async created() {
         this.clearPath();
     },
-    mounted() {
+    async beforeCreate() {
+        let result = await axios.post("http://localhost:3000/getMaze", {
+            x: 11,
+            y: 19
+        });
+        console.log(result);
+        this.grid = result.data;
+        this.res = lodash.cloneDeep(this.grid);
         window.addEventListener("mouseup", () => (this.dragging = false));
     }
 };
 </script>
 
 <style>
+.grid-container {
+    width: 40%;
+}
 </style>
